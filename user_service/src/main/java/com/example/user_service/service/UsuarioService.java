@@ -1,42 +1,117 @@
 package com.example.user_service.service;
 
-import com.example.user_service.dao.UsuarioDbConnection;
+import com.example.user_service.dao.UsuarioDao;
 import com.example.user_service.model.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.List;
 
-@Service
-public class UsuarioService {
+@Service  // Anotação para o Spring saber que essa é uma classe de Service
+class UsuarioService implements IUsuarioService {
 
     @Autowired
-    private UsuarioDbConnection usuarioDbConnection;
+    private UsuarioDao usuarioDao;
 
-    public Usuario cadastrarUsuario(String login, String senha, String email, String cargo) {
-        // Simulação de cadastro
-        Usuario usuario = new Usuario(login, senha, email, cargo);
-        return usuarioDbConnection.save(usuario);
-    }
 
-    public Usuario logarUsuario(String login, String senha) {
-        // Simulação de login
-        Usuario usuario = usuarioDbConnection.buscarPorUsuario(login);
-        if (usuario != null && usuario.getSenha().equals(senha)) {
-            // TODO: Gerar e retornar JWT
-            return usuario;
+    // Métodos
+
+    // Regra de Negócio: salvar um novo usuário com validações
+
+    @Override
+    public void salvarUsuario(Usuario usuario) {
+        // Verificar se o login já está em uso
+        if (usuarioDao.buscarPorLogin(usuario.getLogin()) != null) {
+            throw new IllegalArgumentException("Login já está em uso");
         }
-        return null;
+
+        // Verificar se o e-mail é válido
+        if (usuarioDao.buscarPorLogin(usuario.getEmail()) != null) {
+            throw new IllegalArgumentException("E-mail já está em uso");
+        }
+
+        // Verificar se o cargo é válido
+        if (!"admin".equals(usuario.getCargo()) && !"user".equals(usuario.getCargo())) {
+            throw new IllegalArgumentException("Cargo inválido. Os valores permitidos são 'admin' e 'user'.");
+        }
+
+        usuarioDao.salvarLogin(usuario);
     }
 
-    public Optional<Usuario> getUsuario(Long id) {
-        return usuarioDbConnection.findById(id);
+
+    // Regra de Negócio: busca por ID de usuário
+
+    @Override
+    public Usuario buscarPorId(Long id) {
+        Usuario usuario = usuarioDao.buscarPorId(id);
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuário não encontrado");
+        }
+        return usuario;
     }
 
-    public Usuario atualizarUsuario(Long id, String login, String email) {
-        Usuario usuario = usuarioDbConnection.findById(id).orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-        usuario.setLogin(login);
-        usuario.setEmail(email);
-        return usuarioDbConnection.save(usuario);
+
+    // Regra de Negócio: busca por login de usuário
+
+    @Override
+    public Usuario buscarPorLogin(String login) {
+        Usuario usuario = usuarioDao.buscarPorLogin(login);
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuário não encontrado com o login fornecido");
+        }
+        return usuario;
     }
+
+
+    // Listar todos os usuários
+
+    @Override
+    public List<Usuario> listarTodos() {
+        return usuarioDao.listarTodos();
+    }
+
+
+    // Regra de Negócio: atualização de usuário
+
+    @Override
+    public void atualizarUsuario(Usuario usuario) {
+        // Verificar se o usuário existe no banco de dados
+        Usuario usuarioExistente = usuarioDao.buscarPorId(usuario.getId());
+        if (usuarioExistente == null) {
+            throw new IllegalArgumentException("Usuário não encontrado para atualização");
+        }
+
+        // Verificar se o novo login já está em uso (se o login for diferente do original)
+        if (!usuario.getLogin().equals(usuarioExistente.getLogin()) && usuarioDao.buscarPorLogin(usuario.getLogin()) != null) {
+            throw new IllegalArgumentException("Login já está em uso");
+        }
+
+        // Verificar se o novo e-mail já está em uso (se o e-mail for diferente do original)
+        if (!usuario.getEmail().equals(usuarioExistente.getEmail()) && usuarioDao.buscarPorLogin(usuario.getEmail()) != null) {
+            throw new IllegalArgumentException("E-mail já está em uso");
+        }
+
+        usuarioDao.atualizarLogin(usuario);
+    }
+
+
+    // Regra de Negócio: exclusão de usuário
+
+    @Override
+    public void deletarUsuario(Long id, boolean confirmarExclusao) {
+        // Verificar se o usuário existe antes de tentar deletat
+        Usuario usuarioExistente = usuarioDao.buscarPorId(id);
+        if (usuarioExistente == null) {
+            throw new IllegalArgumentException("Usuário não encontrado para deleção");
+        }
+    
+        // Regra de Negócio: Confirmar a exclusão
+        if (!confirmarExclusao) {
+            throw new IllegalArgumentException("A exclusão do usuário precisa ser confirmada.");
+        }
+    
+        usuarioDao.deletarUsuario(id);
+    }
+    
+
 }
