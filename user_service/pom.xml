@@ -37,9 +37,40 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+		<!-- dependencia do Spring Data JPA(Java Persistance API), facilita integração com banco relacional -->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+		<!-- dependencia do Spring Security, framework pra autenticação e autorização, gerencia permissão de acesso pras rotas da API
+		e permite autenticação de usuário com JWT -->
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt</artifactId>
+			<version>0.12.6</version>
+		</dependency>
+		<!-- lib "jjwy", serve pra criar e verificar JWT -->
+
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- lib "h2", serve pra criar um banco de dados na memória interna, usado pra simular um banco real
+		(vai substituir depois), o scope ta como runtime, ou seja, só vai utilizar a lib durante a execução e os dados não
+		vão persistir -->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- dependencia pra testes unitários que contém o JUnit, Mockito (simular objetos) e Spring Test (teste de integração) -->
+		
 	</dependencies>
 
 	<build>
