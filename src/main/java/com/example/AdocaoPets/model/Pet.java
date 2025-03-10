@@ -6,15 +6,17 @@ public class Pet {
     private String nome;
     private String tipo;
     private int idade;
+    private String sexo;
 
    
     public Pet() {}
     
-    public Pet(Long id, String nome, String tipo, int idade) {
+    public Pet(Long id, String nome, String tipo, int idade, String sexo) {
         this.id = id;
         this.nome = nome;
         this.tipo = tipo;
         this.idade = idade;
+        this.sexo = sexo;
     }
 
     public Long getId() {
@@ -47,6 +49,14 @@ public class Pet {
 
     public void setIdade(int idade) {
         this.idade = idade;
+    }
+
+    public String getSexo() {
+        return sexo;
+    }
+
+    public void setSexo(String sexo) {
+        this.sexo = sexo;
     }
     
 }
