@@ -1,6 +1,9 @@
 package com.example.user_service.service;
 
 import com.example.user_service.dao.UsuarioDao;
+import com.example.user_service.exceptions.CargoInvalidoException;
+import com.example.user_service.exceptions.UsuarioJaExistenteException;
+import com.example.user_service.exceptions.UsuarioNaoEncontradoException;
 import com.example.user_service.model.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,17 +25,17 @@ class UsuarioService implements IUsuarioService {
     public void salvarUsuario(Usuario usuario) {
         // Verificar se o login já está em uso
         if (usuarioDao.buscarPorLogin(usuario.getLogin()) != null) {
-            throw new IllegalArgumentException("Login já está em uso");
+            throw new UsuarioJaExistenteException("Login já está em uso");
         }
 
         // Verificar se o e-mail é válido
         if (usuarioDao.buscarPorLogin(usuario.getEmail()) != null) {
-            throw new IllegalArgumentException("E-mail já está em uso");
+            throw new UsuarioJaExistenteException("E-mail já está em uso");
         }
 
         // Verificar se o cargo é válido
         if (!"admin".equals(usuario.getCargo()) && !"user".equals(usuario.getCargo())) {
-            throw new IllegalArgumentException("Cargo inválido. Os valores permitidos são 'admin' e 'user'.");
+            throw new CargoInvalidoException("Cargo inválido. Os valores permitidos são 'admin' e 'user'.");
         }
 
         usuarioDao.salvarLogin(usuario);
@@ -45,7 +48,7 @@ class UsuarioService implements IUsuarioService {
     public Usuario buscarPorId(Long id) {
         Usuario usuario = usuarioDao.buscarPorId(id);
         if (usuario == null) {
-            throw new IllegalArgumentException("Usuário não encontrado");
+            throw new UsuarioNaoEncontradoException("Usuário não encontrado");
         }
         return usuario;
     }
@@ -57,7 +60,7 @@ class UsuarioService implements IUsuarioService {
     public Usuario buscarPorLogin(String login) {
         Usuario usuario = usuarioDao.buscarPorLogin(login);
         if (usuario == null) {
-            throw new IllegalArgumentException("Usuário não encontrado com o login fornecido");
+            throw new UsuarioNaoEncontradoException("Usuário não encontrado com o login fornecido");
         }
         return usuario;
     }
@@ -78,17 +81,17 @@ class UsuarioService implements IUsuarioService {
         // Verificar se o usuário existe no banco de dados
         Usuario usuarioExistente = usuarioDao.buscarPorId(usuario.getId());
         if (usuarioExistente == null) {
-            throw new IllegalArgumentException("Usuário não encontrado para atualização");
+            throw new UsuarioNaoEncontradoException("Usuário não encontrado para atualização");
         }
 
         // Verificar se o novo login já está em uso (se o login for diferente do original)
         if (!usuario.getLogin().equals(usuarioExistente.getLogin()) && usuarioDao.buscarPorLogin(usuario.getLogin()) != null) {
-            throw new IllegalArgumentException("Login já está em uso");
+            throw new UsuarioJaExistenteException("Login já está em uso");
         }
 
         // Verificar se o novo e-mail já está em uso (se o e-mail for diferente do original)
         if (!usuario.getEmail().equals(usuarioExistente.getEmail()) && usuarioDao.buscarPorLogin(usuario.getEmail()) != null) {
-            throw new IllegalArgumentException("E-mail já está em uso");
+            throw new UsuarioJaExistenteException("E-mail já está em uso");
         }
 
         usuarioDao.atualizarLogin(usuario);
@@ -102,7 +105,7 @@ class UsuarioService implements IUsuarioService {
         // Verificar se o usuário existe antes de tentar deletat
         Usuario usuarioExistente = usuarioDao.buscarPorId(id);
         if (usuarioExistente == null) {
-            throw new IllegalArgumentException("Usuário não encontrado para deleção");
+            throw new UsuarioNaoEncontradoException("Usuário não encontrado para deleção");
         }
     
         // Regra de Negócio: Confirmar a exclusão
