@@ -86,6 +86,11 @@
 		</dependency>
 		<!-- dependencia pra testes unitários que contém o JUnit, Mockito (simular objetos) e Spring Test (teste de integração) -->
 		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>

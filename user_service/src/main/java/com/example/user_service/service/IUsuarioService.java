@@ -1,7 +1,8 @@
 package com.example.user_service.service;
 
-import com.example.user_service.model.Usuario;
 import java.util.List;
+
+import com.example.user_service.model.Usuario;
 
 public interface IUsuarioService {
     void salvarUsuario(Usuario usuario);
@@ -10,5 +11,6 @@ public interface IUsuarioService {
     List<Usuario> listarTodos();
     void atualizarUsuario(Usuario usuario);
     void deletarUsuario(Long id, boolean confirmarExclusao);
+    Usuario autenticarUsuario(String email, String senha);
 }
 
