@@ -38,9 +38,12 @@ public class Usuario {
 
     //Construtores
 
-    public Usuario() {}
+    public Usuario() {
+        System.out.println(">>> DEBUG: Construtor PADRÃO de Usuario chamado.");
+    }
 
     public Usuario(String nome, String cpf, String celular, String endereco, String login, String senha, String email, String cargo) {
+        System.out.println(">>> DEBUG: Construtor COMPLETO de Usuario chamado.");
         setNome(nome);
         setCpf(cpf);
         setCelular(celular);
@@ -88,7 +91,7 @@ public class Usuario {
 
     public String getSenha() { return senha; }
     public final void setSenha(String senha) {
-        this.senha = validarString(senha, "Senha", 8, 50);
+        this.senha = senha;
     }
 
     public String getEmail() { return email; }

@@ -28,7 +28,13 @@ class UsuarioService implements IUsuarioService {
         if (usuarioDao.buscarPorCpf(usuario.getCpf()) != null) {
              throw new UsuarioJaExistenteException("CPF '" + usuario.getCpf() + "' já está em uso");
         }
-
+        if (usuario.getSenha() == null || usuario.getSenha().trim().isEmpty()) {
+            throw new IllegalArgumentException("Senha não pode estar vazio");
+        }
+        if (usuario.getSenha().length() < 8 || usuario.getSenha().length() > 50) {
+             throw new IllegalArgumentException("Senha deve conter entre 8 e 50 caracteres");
+        }
+        // TODO: adicionar validação de senha
         usuarioDao.salvarUsuario(usuario);
     }
 

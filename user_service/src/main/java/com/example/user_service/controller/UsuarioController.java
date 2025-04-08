@@ -32,10 +32,14 @@ public class UsuarioController {
 
     @PostMapping("/cadastrar")
     public ResponseEntity<Usuario> cadastrarUsuario(@RequestBody Usuario usuario) {
-        usuarioService.salvarUsuario(usuario);
-        usuario.setSenha(null);
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuario);
-    }
+        try {
+            usuarioService.salvarUsuario(usuario);
+            usuario.setSenha(null);
+            return ResponseEntity.status(HttpStatus.CREATED).body(usuario);
+       } catch (Exception e) {
+            throw e;
+       }
+   }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUsuario(@RequestBody LoginRequest loginRequest) {
