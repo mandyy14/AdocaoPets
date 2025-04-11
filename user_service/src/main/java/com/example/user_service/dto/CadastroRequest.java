@@ -13,11 +13,9 @@ public class CadastroRequest {
 
     @NotBlank(message = "CPF não pode estar vazio")
     @Pattern(regexp = "\\d{11}|\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}", message = "CPF deve conter 11 dígitos ou estar no formato 000.000.000-00")
-    // Nota: Esta regex é básica, validação de CPF real envolve cálculo de dígitos verificadores (geralmente feito no Service ou com lib específica)
     private String cpf;
 
-    // Celular pode ser opcional ou ter validação de formato mais complexa
-    @Pattern(regexp = "^$|\\(?[1-9]{2}\\)? ?9?\\d{4}-?\\d{4}", message = "Formato de celular inválido") // Permite vazio ou formato BR
+    @Pattern(regexp = "^$|\\(?[1-9]{2}\\)? ?9?\\d{4}-?\\d{4}", message = "Formato de celular inválido")
     private String celular;
 
     @NotBlank(message = "Endereço não pode estar vazio")

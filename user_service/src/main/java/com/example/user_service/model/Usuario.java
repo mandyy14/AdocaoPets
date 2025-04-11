@@ -61,9 +61,9 @@ public class Usuario {
     public void setSenha(String senha) { this.senha = senha; }
     public void setEmail(String email) { this.email = email; }
     public void setCargo(String cargo) {
-         if (cargo == null || (!"admin".equalsIgnoreCase(cargo) && !"user".equalsIgnoreCase(cargo))) {
-             throw new IllegalArgumentException("Cargo inválido. Use 'admin' ou 'user'.");
-         }
+        if (cargo == null || (!"admin".equalsIgnoreCase(cargo) && !"user".equalsIgnoreCase(cargo))) {
+            throw new IllegalArgumentException("Cargo inválido. Use 'admin' ou 'user'.");
+        }
         this.cargo = cargo.toLowerCase();
     }
 }
