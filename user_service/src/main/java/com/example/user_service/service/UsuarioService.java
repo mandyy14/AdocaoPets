@@ -1,114 +1,153 @@
 package com.example.user_service.service;
 
-import java.util.List;
-
+import com.example.user_service.dto.CadastroRequest;
+import com.example.user_service.dto.UpdateEmailRequest;
+import com.example.user_service.dto.UpdatePasswordRequest; 
+import com.example.user_service.model.Usuario;
+import com.example.user_service.repository.UsuarioRepository;
+import com.example.user_service.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+// import org.springframework.security.crypto.password.PasswordEncoder; // Para Hashing
 
-import com.example.user_service.dao.UsuarioDao;
-import com.example.user_service.exceptions.CredenciaisInvalidasException;
-import com.example.user_service.exceptions.UsuarioJaExistenteException;
-import com.example.user_service.exceptions.UsuarioNaoEncontradoException;
-import com.example.user_service.model.Usuario;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
+@Transactional
 class UsuarioService implements IUsuarioService {
 
+    private final UsuarioRepository usuarioRepository;
+
     @Autowired
-    private UsuarioDao usuarioDao;
-
-    @Override
-    public void salvarUsuario(Usuario usuario) {
-        if (usuarioDao.buscarPorLogin(usuario.getLogin()) != null) {
-            throw new UsuarioJaExistenteException("Login '" + usuario.getLogin() + "' já está em uso");
-        }
-        if (usuarioDao.buscarPorEmail(usuario.getEmail()) != null) {
-            throw new UsuarioJaExistenteException("E-mail '" + usuario.getEmail() + "' já está em uso");
-        }
-        if (usuarioDao.buscarPorCpf(usuario.getCpf()) != null) {
-             throw new UsuarioJaExistenteException("CPF '" + usuario.getCpf() + "' já está em uso");
-        }
-        if (usuario.getSenha() == null || usuario.getSenha().trim().isEmpty()) {
-            throw new IllegalArgumentException("Senha não pode estar vazio");
-        }
-        if (usuario.getSenha().length() < 8 || usuario.getSenha().length() > 50) {
-             throw new IllegalArgumentException("Senha deve conter entre 8 e 50 caracteres");
-        }
-        // TODO: adicionar validação de senha
-        usuarioDao.salvarUsuario(usuario);
+    public UsuarioService(UsuarioRepository usuarioRepository) {
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Override
-    public Usuario buscarPorId(Long id) {
-        Usuario usuario = usuarioDao.buscarPorId(id);
-        if (usuario == null) {
-            throw new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id);
-        }
-        return usuario;
-    }
+    public Usuario salvarUsuario(CadastroRequest dto) {
 
-    @Override
-    public Usuario buscarPorLogin(String login) {
-        Usuario usuario = usuarioDao.buscarPorLogin(login);
-        if (usuario == null) {
-            throw new UsuarioNaoEncontradoException("Usuário não encontrado com Login: " + login);
-        }
-        return usuario;
-    }
+        // Validação de Negócio (duplicidade dos dados)
+        if (usuarioRepository.findByLogin(dto.getEmail()).isPresent()) { throw new UsuarioJaExistenteException("Login (baseado no email) '" + dto.getEmail() + "' já está em uso"); }
+        if (usuarioRepository.findByEmail(dto.getEmail()).isPresent()) { throw new UsuarioJaExistenteException("E-mail '" + dto.getEmail() + "' já está em uso"); }
+        if (usuarioRepository.findByCpf(dto.getCpf()).isPresent()) { throw new UsuarioJaExistenteException("CPF '" + dto.getCpf() + "' já está em uso"); }
 
-    @Override
-    public List<Usuario> listarTodos() {
-        return usuarioDao.listarTodos();
-    }
+         Usuario novoUsuario = new Usuario();
+         novoUsuario.setNome(dto.getNome());
+         novoUsuario.setCpf(dto.getCpf());
+         novoUsuario.setCelular(dto.getCelular());
+         novoUsuario.setEndereco(dto.getEndereco());
+         novoUsuario.setEmail(dto.getEmail());
+         novoUsuario.setLogin(dto.getEmail());
+         novoUsuario.setCargo("user");
 
-    @Override
-    public void atualizarUsuario(Usuario usuario) {
-        Usuario usuarioExistente = usuarioDao.buscarPorId(usuario.getId());
-        if (usuarioExistente == null) {
-            throw new UsuarioNaoEncontradoException("Usuário não encontrado para atualização com ID: " + usuario.getId());
-        }
+         // TODO: Adicionar HASHING da senha AQUI
+         novoUsuario.setSenha(dto.getSenha());
 
-        if (!usuario.getLogin().equalsIgnoreCase(usuarioExistente.getLogin()) && usuarioDao.buscarPorLogin(usuario.getLogin()) != null) {
-             throw new UsuarioJaExistenteException("Login '" + usuario.getLogin() + "' já está em uso por outro usuário");
-        }
-        if (!usuario.getEmail().equalsIgnoreCase(usuarioExistente.getEmail()) && usuarioDao.buscarPorEmail(usuario.getEmail()) != null) {
-             throw new UsuarioJaExistenteException("E-mail '" + usuario.getEmail() + "' já está em uso por outro usuário");
-        }
-         if (!usuario.getCpf().equals(usuarioExistente.getCpf()) && usuarioDao.buscarPorCpf(usuario.getCpf()) != null) {
-             throw new UsuarioJaExistenteException("CPF '" + usuario.getCpf() + "' já está em uso por outro usuário");
-         }
+         Usuario usuarioSalvo = usuarioRepository.save(novoUsuario);
 
-         // TODO: Tratar atualização de senha
-
-        usuarioDao.atualizarUsuario(usuario);
-    }
-
-    @Override
-    public void deletarUsuario(Long id, boolean confirmarExclusao) {
-        if (!confirmarExclusao) {
-            throw new IllegalArgumentException("A exclusão do usuário precisa ser confirmada.");
-        }
-        if (usuarioDao.buscarPorId(id) == null) {
-            throw new UsuarioNaoEncontradoException("Usuário não encontrado para deleção com ID: " + id);
-        }
-        usuarioDao.deletarUsuario(id);
+         return usuarioSalvo;
     }
 
 
     @Override
+    @Transactional(readOnly = true)
     public Usuario autenticarUsuario(String email, String senha) {
-        Usuario usuario = usuarioDao.buscarPorEmail(email);
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com o email fornecido: " + email));
 
-        if (usuario == null) {
-            throw new UsuarioNaoEncontradoException("Usuário não encontrado com o email fornecido: " + email);
-        }
+        // TODO: Comparar senha com Hashing (passwordEncoder.matches)
 
-        // TODO: Substituir por passwordEncoder.matches(senha, usuario.getSenha())
         if (!senha.equals(usuario.getSenha())) {
             throw new CredenciaisInvalidasException("Senha inválida.");
         }
-
         return usuario;
     }
 
-}
+    @Override
+    @Transactional(readOnly = true)
+    public Usuario buscarPorId(Long id) {
+         return usuarioRepository.findById(id)
+                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com ID: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Usuario buscarPorLogin(String login){
+         return usuarioRepository.findByLogin(login)
+                 .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com Login: " + login));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Usuario> listarTodos() {
+         return usuarioRepository.findAll();
+    }
+
+     @Override
+     public void deletarUsuario(Long id, boolean confirmarExclusao) {
+         if (!confirmarExclusao) {
+             throw new IllegalArgumentException("A exclusão do usuário precisa ser confirmada.");
+         }
+         if (!usuarioRepository.existsById(id)) {
+             throw new UsuarioNaoEncontradoException("Usuário não encontrado para deleção com ID: " + id);
+         }
+         usuarioRepository.deleteById(id);
+     }
+
+     @Override
+     @Transactional(readOnly = true)
+     public Usuario buscarPorCpf(String cpf) {
+         return usuarioRepository.findByCpf(cpf)
+             .orElseThrow(() -> new UsuarioNaoEncontradoException("Usuário não encontrado com CPF: " + cpf));
+     }
+
+     @Override
+     public Usuario updateEmail(Long userId, UpdateEmailRequest dto) {
+         Usuario usuario = buscarPorId(userId);
+ 
+         // TODO: Usar Hashing: if (!passwordEncoder.matches(dto.getCurrentPassword(), usuario.getSenha())) {
+         if (!dto.getCurrentPassword().equals(usuario.getSenha())) {
+             throw new CredenciaisInvalidasException("Senha atual incorreta.");
+         }
+ 
+         String newEmail = dto.getNewEmail();
+         Optional<Usuario> usuarioComMesmoEmail = usuarioRepository.findByEmail(newEmail);
+         if (usuarioComMesmoEmail.isPresent() && !Objects.equals(usuarioComMesmoEmail.get().getId(), userId)) {
+             throw new UsuarioJaExistenteException("O email '" + newEmail + "' já está em uso por outro usuário.");
+         }
+ 
+         usuario.setEmail(newEmail);
+         usuario.setLogin(newEmail);
+ 
+         return usuarioRepository.save(usuario);
+     }
+ 
+     @Override
+     public void updatePassword(Long userId, UpdatePasswordRequest dto) {
+         Usuario usuario = buscarPorId(userId);
+ 
+         // TODO: Usar Hashing: if (!passwordEncoder.matches(dto.getCurrentPassword(), usuario.getSenha())) {
+         if (!dto.getCurrentPassword().equals(usuario.getSenha())) {
+             throw new CredenciaisInvalidasException("Senha atual incorreta.");
+         }
+ 
+         String newPassword = dto.getNewPassword();
+ 
+         // TODO: Usar Hashing: if (passwordEncoder.matches(newPassword, usuario.getSenha())) {
+         if (newPassword.equals(usuario.getSenha())) {
+              throw new IllegalArgumentException("A nova senha não pode ser igual à senha atual.");
+         }
+ 
+         // 5. Define a nova senha (ainda sem hash)
+         // TODO: Adicionar HASHING da senha AQUI
+         // String senhaComHash = passwordEncoder.encode(newPassword);
+         // usuario.setSenha(senhaComHash);
+         usuario.setSenha(newPassword);
+ 
+         usuarioRepository.save(usuario);
+     }
+
+ }
