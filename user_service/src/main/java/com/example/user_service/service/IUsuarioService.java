@@ -16,4 +16,5 @@ public interface IUsuarioService {
     Usuario autenticarUsuario(String email, String senha);
     Usuario updateEmail(Long userId, UpdateEmailRequest dto);
     void updatePassword(Long userId, UpdatePasswordRequest dto);
+    void updateProfileImageUrl(Long userId, String imageUrl);
 }

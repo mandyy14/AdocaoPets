@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -78,4 +79,16 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/profile-image-url")
+    public ResponseEntity<?> updateProfileImageUrl(
+        @PathVariable Long id,
+        @RequestBody Map<String, String> payload) {
+    
+        String imageUrl = payload.get("imageUrl");
+        if (imageUrl == null) {
+            return ResponseEntity.badRequest().body("Faltando 'imageUrl' no corpo da requisição.");
+        }
+        usuarioService.updateProfileImageUrl(id, imageUrl);
+        return ResponseEntity.ok().build();
+    }
 }
