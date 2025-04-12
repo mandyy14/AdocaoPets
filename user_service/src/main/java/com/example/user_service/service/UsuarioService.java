@@ -172,11 +172,4 @@ class UsuarioService implements IUsuarioService {
         }
     }
 
-    @Override
-    public void updateProfileImageUrl(Long userId, String imageUrl) {
-        Usuario usuario = buscarPorId(userId);
-        usuario.setProfileImageUrl(imageUrl);
-        usuarioRepository.save(usuario);
-    }
-
  }
