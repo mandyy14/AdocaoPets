@@ -7,14 +7,25 @@ import com.example.user_service.model.Usuario;
 import com.example.user_service.repository.UsuarioRepository;
 import com.example.user_service.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 // import org.springframework.security.crypto.password.PasswordEncoder; // Para Hashing
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import br.com.caelum.stella.validation.CPFValidator;
 import br.com.caelum.stella.validation.InvalidStateException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -22,11 +33,18 @@ import java.util.Optional;
 @Transactional
 class UsuarioService implements IUsuarioService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
+
     private final UsuarioRepository usuarioRepository;
+    private final RestTemplate restTemplate;
+
+    @Value("${app.services.media.url}")
+    private String mediaServiceBaseUrl;
 
     @Autowired
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, RestTemplate restTemplate) {
         this.usuarioRepository = usuarioRepository;
+        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -169,6 +187,57 @@ class UsuarioService implements IUsuarioService {
         } catch (InvalidStateException e) {
             String errorMessage = e.getInvalidMessages().isEmpty() ? "Dígitos verificadores ou formato inválido." : e.getInvalidMessages().get(0).getMessage();
             throw new IllegalArgumentException("CPF inválido: " + errorMessage);
+        }
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<String> getProfileImageUrlFromMediaService(Long userId) {
+        if (!usuarioRepository.existsById(userId)) {
+            logger.warn("Tentativa de buscar URL de foto para usuário inexistente: {}", userId);
+            return Optional.empty();
+        }
+
+        String url = mediaServiceBaseUrl + "/api/media/profile-picture-info/" + userId;
+        logger.info("Chamando media-service para obter URL da foto: {}", url);
+
+        try {
+            ParameterizedTypeReference<Map<String, Object>> responseType = new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<Map<String, Object>> response =
+                restTemplate.exchange(url, HttpMethod.GET, null, responseType);
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> responseBody = response.getBody();
+
+                if (responseBody != null) {
+                    Object imageUrlObj = responseBody.get("imageUrl");
+                    if (imageUrlObj instanceof String && !((String) imageUrlObj).isEmpty()) {
+                        logger.info("URL da foto encontrada para userId {}: {}", userId, imageUrlObj);
+                        return Optional.of((String) imageUrlObj);
+                    } else {
+                        logger.warn("Resposta OK do media-service mas 'imageUrl' inválida ou ausente no corpo para userId {}", userId);
+                        return Optional.empty();
+                    }
+                } else {
+                    logger.warn("Resposta OK do media-service mas corpo era nulo para userId {}", userId);
+                    return Optional.empty();
+                }
+            } else {
+                logger.warn("Media-service retornou status {} para busca de foto do userId {}", response.getStatusCode(), userId);
+                return Optional.empty();
+            }
+
+        } catch (HttpClientErrorException.NotFound ex) {
+            logger.info("Media-service retornou 404 (sem foto) para userId {}", userId);
+            return Optional.empty();
+        } catch (RestClientException ex) {
+            logger.error("Erro de comunicação ao chamar media-service ({}) para obter URL da foto do userId {}: {}", url, userId, ex.getMessage());
+            return Optional.empty();
+        } catch (Exception ex) {
+             logger.error("Erro inesperado em getProfileImageUrlFromMediaService para userId {}: {}", userId, ex.getMessage(), ex);
+             return Optional.empty();
         }
     }
 

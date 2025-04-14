@@ -5,6 +5,7 @@ import com.example.user_service.model.Usuario;
 import com.example.user_service.dto.UpdateEmailRequest;
 import com.example.user_service.dto.UpdatePasswordRequest;
 import java.util.List;
+import java.util.Optional;
 
 public interface IUsuarioService {
     Usuario salvarUsuario(CadastroRequest dto);
@@ -16,4 +17,5 @@ public interface IUsuarioService {
     Usuario autenticarUsuario(String email, String senha);
     Usuario updateEmail(Long userId, UpdateEmailRequest dto);
     void updatePassword(Long userId, UpdatePasswordRequest dto);
+    Optional<String> getProfileImageUrlFromMediaService(Long userId);
 }

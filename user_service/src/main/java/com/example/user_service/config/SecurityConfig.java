@@ -1,3 +1,4 @@
+// src/main/java/com/example/user_service/config/SecurityConfig.java
 package com.example.user_service.config;
 
 import org.springframework.context.annotation.Bean;
@@ -22,13 +23,27 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
             .csrf(csrf -> csrf.disable())
+
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/users/").permitAll()
-                .anyRequest().permitAll()
+                .requestMatchers("/api/users/cadastrar", "/api/users/login").permitAll()
+
+                // --- PERMISSÃO TEMPORÁRIA PARA TESTAR UPLOAD/UPDATE DA URL DA IMAGEM ---
+                // Libera o endpoint PATCH que recebe a URL da imagem vinda do frontend após upload no media-service
+                .requestMatchers(HttpMethod.PATCH, "/api/users/{id}/profile-image-url").permitAll() // <<< LINHA ADICIONADA/AJUSTADA
+                // --- LEMBRE-SE DE REMOVER permitAll() E USAR authenticated() AQUI DEPOIS! ---
+
+                .requestMatchers(HttpMethod.GET, "/api/users/{id}/profile-picture-url").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/api/users/{id}/email", "/api/users/{id}/password").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/users/listar", "/api/users/buscar/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/api/users/deletar/**").authenticated()
+                .anyRequest().authenticated()
             )
+
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
         return http.build();
     }
 
@@ -36,13 +51,18 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
+        // configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
-    // TODO: PasswordEncoder
+    // TODO: PasswordEncoder Bean (essencial para hashing de senha)
+    // @Bean
+    // public PasswordEncoder passwordEncoder() {
+    //     return new BCryptPasswordEncoder();
+    // }
 }

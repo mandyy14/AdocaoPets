@@ -1,6 +1,8 @@
 package com.example.user_service.controller;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.example.user_service.dto.CadastroRequest;
 import com.example.user_service.dto.LoginRequest;
@@ -28,6 +32,8 @@ import jakarta.validation.Valid;
 public class UsuarioController {
 
     private final IUsuarioService usuarioService;
+
+    private static final Logger logger = LoggerFactory.getLogger(UsuarioController.class);
 
     public UsuarioController(IUsuarioService usuarioService) {
         this.usuarioService = usuarioService;
@@ -86,6 +92,19 @@ public class UsuarioController {
 
         usuarioService.updatePassword(id, dto);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/profile-picture-url")
+     public ResponseEntity<?> getProfilePictureUrl(@PathVariable Long id) {
+        logger.info("Recebida requisição para buscar URL da foto do usuário {}", id);
+        Optional<String> imageUrlOpt = usuarioService.getProfileImageUrlFromMediaService(id);
+
+        return imageUrlOpt
+        .map(url -> ResponseEntity.ok().body(Map.of("imageUrl", url)))
+        .orElseGet(() -> {
+            logger.info("Nenhuma URL de foto encontrada para usuário {}", id);
+            return ResponseEntity.notFound().build();
+        });
     }
 
 }
