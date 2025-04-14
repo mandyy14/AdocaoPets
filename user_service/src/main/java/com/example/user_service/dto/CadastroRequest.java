@@ -28,7 +28,7 @@ public class CadastroRequest {
     private String email;
 
     @NotBlank(message = "Senha não pode estar vazio")
-    @Size(min = 8, max = 50, message = "Senha deve conter entre {min} e {max} caracteres") // Ajustar max se usar hash
+    @Size(min = 8, max = 50, message = "Senha deve conter entre {min} e {max} caracteres")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,50}$",
              message = "Senha deve conter pelo menos uma letra maiúscula, uma minúscula, um número e um caractere especial (@$!%*?&)")
     private String senha;  

@@ -17,8 +17,8 @@ public class Usuario {
     @Column(unique = true, nullable = false)
     private String login;
 
-    @Column(nullable = false)
-    private String senha; // TODO: Armazenará o HASH no futuro
+    @Column(nullable = false, length = 72)
+    private String senha;
 
     @Column(unique = true, nullable = false)
     private String email;

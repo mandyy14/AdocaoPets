@@ -1,4 +1,3 @@
-// src/main/java/com/example/user_service/config/SecurityConfig.java
 package com.example.user_service.config;
 
 import org.springframework.context.annotation.Bean;
@@ -7,6 +6,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -24,10 +27,15 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
+            .headers(headers -> headers
+            .frameOptions(frameOptionsConfig -> frameOptionsConfig.disable())
+            )
+
             .csrf(csrf -> csrf.disable())
 
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/api/users/cadastrar", "/api/users/login").permitAll()
 
                 // --- PERMISSÃO TEMPORÁRIA PARA TESTAR UPLOAD/UPDATE DA URL DA IMAGEM ---
@@ -60,9 +68,9 @@ public class SecurityConfig {
         return source;
     }
 
-    // TODO: PasswordEncoder Bean (essencial para hashing de senha)
-    // @Bean
-    // public PasswordEncoder passwordEncoder() {
-    //     return new BCryptPasswordEncoder();
-    // }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
 }

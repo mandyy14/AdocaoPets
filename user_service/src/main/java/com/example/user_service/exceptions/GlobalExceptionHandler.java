@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 
-import com.example.user_service.exceptions.UsuarioNaoEncontradoException;
-import com.example.user_service.exceptions.UsuarioJaExistenteException;
-import com.example.user_service.exceptions.CredenciaisInvalidasException;
+// import com.example.user_service.exceptions.UsuarioNaoEncontradoException;
+// import com.example.user_service.exceptions.UsuarioJaExistenteException;
+// import com.example.user_service.exceptions.CredenciaisInvalidasException;
 
 import java.util.stream.Collectors;
 
