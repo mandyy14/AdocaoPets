@@ -35,11 +35,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/users/{id}/profile-image-url").permitAll() // <<< LINHA ADICIONADA/AJUSTADA
                 // --- LEMBRE-SE DE REMOVER permitAll() E USAR authenticated() AQUI DEPOIS! ---
 
-                .requestMatchers(HttpMethod.GET, "/api/users/{id}/profile-picture-url").authenticated()
-                .requestMatchers(HttpMethod.PATCH, "/api/users/{id}/email", "/api/users/{id}/password").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/users/listar", "/api/users/buscar/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/users/deletar/**").authenticated()
-                .anyRequest().authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/users/{id}/profile-picture-url").permitAll()
+                .requestMatchers(HttpMethod.PATCH, "/api/users/{id}/email", "/api/users/{id}/password").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/users/listar", "/api/users/buscar/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/users/deletar/**").permitAll()
+                .anyRequest().permitAll()
             )
 
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

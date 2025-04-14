@@ -86,7 +86,6 @@ public class FileUploadController {
     // Endpoint pra servir a img
     @GetMapping("/serve/profile-pictures/{filename:.+}")
     public ResponseEntity<Resource> serveProfilePicture(@PathVariable String filename, HttpServletRequest request) {
-        return storageService.loadAndServe("profile-pictures", filename, request);
+        return storageService.loadAndServe(null, filename, request);
     }
-
 }

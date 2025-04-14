@@ -127,10 +127,15 @@ public class LocalStorageService implements IStorageService {
             }
 
             Path resolvedPath = targetDir.resolve(filename).normalize();
+            Path rootAbsoluteNormalized = this.rootLocation.toAbsolutePath().normalize();
+            Path resolvedAbsoluteNormalized = resolvedPath.toAbsolutePath().normalize();
 
-             if (!resolvedPath.toAbsolutePath().startsWith(this.rootLocation.toAbsolutePath())) {
-                 throw new StorageException("Tentativa de acesso a arquivo fora do diretório de armazenamento permitido: " + filename);
-             }
+            if (!resolvedAbsoluteNormalized.startsWith(rootAbsoluteNormalized)) {
+                System.err.println("!!! FALHA DE SEGURANÇA no loadPath: Path final está fora da raiz!");
+                System.err.println("    Path Final Norm: " + resolvedAbsoluteNormalized);
+                System.err.println("    Raiz Norm      : " + rootAbsoluteNormalized);
+                throw new StorageException("Tentativa de acesso a arquivo fora do diretório de armazenamento permitido: " + filename);
+            }
 
             return resolvedPath;
 
