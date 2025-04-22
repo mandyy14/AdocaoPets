@@ -1,69 +1,45 @@
 package com.example.pet_service.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.example.pet_service.dto.PetFilterCriteria;
+import com.example.pet_service.model.Pet;
+import com.example.pet_service.service.IPetService;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.pet_service.model.Pet;
-
 @RestController
-@RequestMapping("/pets")
+@RequestMapping("/api/pets")
 public class PetController {
 
-    // Lista de pets em memória
-    private List<Pet> repository = new ArrayList<>();
+    private final IPetService petService;
 
-    // GET - Listar todos os pets 
-    @GetMapping
-    public List<Pet> index() {
-        return repository;
+    @Autowired
+    public PetController(IPetService petService) {
+        this.petService = petService;
     }
 
-    // POST - Cadastrar um novo pet
-    @PostMapping
-    public ResponseEntity<Pet> create(@RequestBody Pet pet) {
-        pet.setId((long) (repository.size() + 1)); // Simula um ID único
-        repository.add(pet);
-        return ResponseEntity.status(201).body(pet);
+    /**
+     * Endpoint para listar pets disponíveis com filtros, paginação e ordenação.
+     * Filtros: passados como query parameters (ex: ?nome=Bob&especie=CACHORRO)
+     * Paginação: query parameters 'page' (número da página, 0-based) e 'size' (itens por página).
+     * Ordenação: query parameter 'sort' (ex: sort=nome,asc ou sort=idade,desc). Múltiplos sorts: sort=especie,asc&sort=nome,desc
+     * @param criteria DTO que agrupa os parâmetros de filtro (Spring mapeia automaticamente os query params para os campos do DTO).
+     * @param pageable Objeto que agrupa os parâmetros de paginação e ordenação (Spring cria automaticamente). @ParameterObject ajuda na documentação.
+     * @return ResponseEntity contendo a Page<Pet> com os resultados e metadados de paginação.
+     */
+    @GetMapping("/disponiveis") 
+    public ResponseEntity<Page<Pet>> listAvailablePets(
+            PetFilterCriteria criteria,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<Pet> petPage = petService.listAvailablePets(criteria, pageable);
+        return ResponseEntity.ok(petPage);
     }
 
-    // GET - Buscar um pet por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Pet> get(@PathVariable Long id) {
-        return repository.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(404).build());
-    }
-
-    // PUT - Atualizar um pet existente
-    @PutMapping("/{id}")
-    public ResponseEntity<Pet> update(@PathVariable Long id, @RequestBody Pet petAtualizado) {
-        for (int i = 0; i < repository.size(); i++) {
-            Pet petExistente = repository.get(i);
-            if (petExistente.getId().equals(id)) {
-                petAtualizado.setId(id); // Garante que o ID seja mantido
-                repository.set(i, petAtualizado);
-                return ResponseEntity.ok(petAtualizado);
-            }
-        }
-        return ResponseEntity.status(404).build();
-    }
-
-    // DELETE - Remover um pet
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        boolean removed = repository.removeIf(p -> p.getId().equals(id));
-        return removed ? ResponseEntity.noContent().build() : ResponseEntity.status(404).build();
-    }
+    // TODO: Adicionar endpoints GET /api/pets/{id}, POST /api/pets, PUT /api/pets/{id}, DELETE /api/pets/{id}
 }
