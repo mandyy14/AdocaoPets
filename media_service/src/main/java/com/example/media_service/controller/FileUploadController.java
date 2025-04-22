@@ -1,19 +1,26 @@
 package com.example.media_service.controller;
 
-import com.example.media_service.model.ProfilePicture;
-import com.example.media_service.repository.ProfilePictureRepository;
-import com.example.media_service.service.IStorageService;
+import java.util.Map;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.Map;
-import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.media_service.model.ProfilePicture;
+import com.example.media_service.repository.ProfilePictureRepository;
+import com.example.media_service.service.IStorageService;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
@@ -84,8 +91,13 @@ public class FileUploadController {
     }
 
     // Endpoint pra servir a img
-    @GetMapping("/serve/profile-pictures/{filename:.+}")
-    public ResponseEntity<Resource> serveProfilePicture(@PathVariable String filename, HttpServletRequest request) {
-        return storageService.loadAndServe(null, filename, request);
+    @GetMapping("/serve/{subfolder}/{filename:.+}")
+    public ResponseEntity<Resource> serveFile(
+            @PathVariable String subfolder, // profile-pictures ou pet-pictures
+            @PathVariable String filename,
+            HttpServletRequest request) {
+        logger.debug("Requisição para servir arquivo: subfolder={}, filename={}", subfolder, filename);
+        return storageService.loadAndServe(subfolder, filename, request);
     }
+
 }
