@@ -2,7 +2,6 @@ package com.example.pet_service.repository;
 
 import com.example.pet_service.model.Pet;
 import org.springframework.data.jpa.domain.Specification;
-// import jakarta.persistence.criteria.Predicate;
 
 public class PetSpecifications {
 
@@ -67,7 +66,38 @@ public class PetSpecifications {
      }
 
      // Filtro padrão para buscar apenas pets NÃO adotados
-     public static Specification<Pet> isNotAdopted() {
-         return (root, query, cb) -> cb.equal(root.get("adotado"), false);
-     }
+    public static Specification<Pet> isNotAdopted() {
+        return (root, query, cb) -> cb.equal(root.get("adotado"), false);
+    }
+
+    // Filtro por raça
+    public static Specification<Pet> racaContains(String raca) {
+        return (root, query, cb) -> {
+            if (raca == null || raca.trim().isEmpty()) {
+                return cb.conjunction();
+            }
+            return cb.like(cb.lower(root.get("raca")), "%" + raca.toLowerCase() + "%");
+        };
+    }
+
+    // Filtro por cidade
+    public static Specification<Pet> cidadeContains(String cidade) {
+        return (root, query, cb) -> {
+            if (cidade == null || cidade.trim().isEmpty()) {
+                return cb.conjunction();
+            }
+            return cb.like(cb.lower(root.get("cidade")), "%" + cidade.toLowerCase() + "%");
+        };
+    }
+
+    // Filtro por estado (uppercase. ex: SP)
+    public static Specification<Pet> estadoEquals(String estado) {
+        return (root, query, cb) -> {
+            if (estado == null || estado.trim().isEmpty()) {
+                return cb.conjunction();
+            }
+            return cb.equal(cb.upper(root.get("estado")), estado.toUpperCase());
+        };
+    }
+
 }

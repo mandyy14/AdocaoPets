@@ -51,7 +51,6 @@ public class UsuarioController {
     public ResponseEntity<?> loginUsuario(@Valid @RequestBody LoginRequest loginRequest) {
         Usuario usuarioAutenticado = usuarioService.autenticarUsuario(loginRequest.getEmail(), loginRequest.getSenha());
         usuarioAutenticado.setSenha(null);
-        // TODO: retornar um Token JWT em vez do objeto Usuario
         return ResponseEntity.ok(usuarioAutenticado);
     }
 
