@@ -1,9 +1,11 @@
 package com.example.user_service.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,6 +26,7 @@ import com.example.user_service.dto.UpdateEmailRequest;
 import com.example.user_service.dto.UpdatePasswordRequest;
 import com.example.user_service.model.Usuario;
 import com.example.user_service.service.IUsuarioService;
+import com.example.user_service.service.JwtService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,12 +38,15 @@ import jakarta.validation.Valid;
 @Tag(name = "Usuários", description = "Endpoints para gerenciamento, cadastro e login de usuários")
 public class UsuarioController {
 
-    private final IUsuarioService usuarioService;
-
     private static final Logger logger = LoggerFactory.getLogger(UsuarioController.class);
 
-    public UsuarioController(IUsuarioService usuarioService) {
+    private final IUsuarioService usuarioService;
+    private final JwtService jwtService;
+
+    @Autowired
+    public UsuarioController(IUsuarioService usuarioService, JwtService jwtService) {
         this.usuarioService = usuarioService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/cadastrar")
@@ -48,7 +54,6 @@ public class UsuarioController {
                description = "Cria um novo usuário no sistema. O login será o mesmo que o email e o cargo é 'user' por padrão.")
     public ResponseEntity<Usuario> cadastrarUsuario(@Valid @RequestBody CadastroRequest dto) {
         Usuario usuarioSalvo = usuarioService.salvarUsuario(dto);
-
         usuarioSalvo.setSenha(null);
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioSalvo);
     }
@@ -57,9 +62,25 @@ public class UsuarioController {
     @Operation(summary = "Autenticar Usuário",
                description = "Autentica um usuário com email e senha. Em caso de sucesso, retorna os dados do usuário. (TODO: Futuramente retornará um token JWT)")
     public ResponseEntity<?> loginUsuario(@Valid @RequestBody LoginRequest loginRequest) {
+        logger.info("Tentativa de login para email: {}", loginRequest.getEmail());
+
         Usuario usuarioAutenticado = usuarioService.autenticarUsuario(loginRequest.getEmail(), loginRequest.getSenha());
-        usuarioAutenticado.setSenha(null);
-        return ResponseEntity.ok(usuarioAutenticado);
+
+        String token = jwtService.generateToken(usuarioAutenticado);
+        logger.info("Token JWT gerado para usuário ID: {}", usuarioAutenticado.getId());
+
+        Map<String, Object> responseBody = new HashMap<>();
+        responseBody.put("token", token);
+
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", usuarioAutenticado.getId());
+        userMap.put("nome", usuarioAutenticado.getNome());
+        userMap.put("email", usuarioAutenticado.getEmail());
+        userMap.put("cargo", usuarioAutenticado.getCargo());
+
+        responseBody.put("user", userMap);
+
+        return ResponseEntity.ok(responseBody);
     }
 
     @GetMapping("/listar")
