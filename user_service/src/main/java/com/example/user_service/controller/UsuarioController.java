@@ -60,7 +60,7 @@ public class UsuarioController {
 
     @PostMapping("/login")
     @Operation(summary = "Autenticar Usuário",
-               description = "Autentica um usuário com email e senha. Em caso de sucesso, retorna os dados do usuário. (TODO: Futuramente retornará um token JWT)")
+               description = "Autentica um usuário com email e senha. Em caso de sucesso, retorna os dados do usuário e JWT.")
     public ResponseEntity<?> loginUsuario(@Valid @RequestBody LoginRequest loginRequest) {
         logger.info("Tentativa de login para email: {}", loginRequest.getEmail());
 

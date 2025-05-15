@@ -56,16 +56,17 @@ public class PetController {
     }
 
     @PostMapping
-    @Operation(summary = "Cadastrar Novo Pet",
-               description = "Adiciona um novo pet ao sistema para adoção. Requer dados do pet e o identificador da mídia (foto). (Endpoint a ser protegido futuramente)")
+    @Operation(summary = "Cadastrar Novo Pet (Requer ADMIN)",
+               description = "Adiciona um novo pet ao sistema para adoção. Requer dados do pet e o identificador da mídia (foto). " +
+                            "Este endpoint só pode ser acessado por usuários com papel de ADMIN.")
     public ResponseEntity<Pet> createPet(@Valid @RequestBody PetRequestDTO petDto) {
         Pet createdPet = petService.createPet(petDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPet);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Atualizar Pet Existente",
-               description = "Atualiza os dados de um pet existente. (Endpoint a ser protegido futuramente)")
+    @Operation(summary = "Atualizar Pet Existente (Requer ADMIN)",
+               description = "Atualiza os dados de um pet existente. Este endpoint só pode ser acessado por usuários com papel de ADMIN.")
     @Parameter(name = "id", description = "ID do pet a ser atualizado", required = true, example = "1")
     public ResponseEntity<Pet> updatePet(@PathVariable Long id, @Valid @RequestBody PetRequestDTO petDto) {
         return petService.updatePet(id, petDto)
@@ -74,8 +75,8 @@ public class PetController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Deletar Pet por ID",
-               description = "Remove um pet do sistema. (Endpoint a ser protegido futuramente)")
+    @Operation(summary = "Deletar Pet por ID (Requer ADMIN)",
+               description = "Remove um pet do sistema. Este endpoint só pode ser acessado por usuários com papel de ADMIN.")
     @Parameter(name = "id", description = "ID do pet a ser deletado", required = true, example = "1")
     public ResponseEntity<Void> deletePet(@PathVariable Long id) {
         petService.deletePet(id);

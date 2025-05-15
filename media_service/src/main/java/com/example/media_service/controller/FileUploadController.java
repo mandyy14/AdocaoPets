@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.media_service.model.ProfilePicture;
 import com.example.media_service.repository.ProfilePictureRepository;
@@ -42,15 +47,41 @@ public class FileUploadController {
         this.profilePictureRepository = profilePictureRepository;
     }
 
-    // Endpoint upload de foto
     @PostMapping("/upload/profile-picture/{userId}")
     @Operation(summary = "Upload da Foto de Perfil",
-               description = "Faz o upload de um arquivo de imagem para ser usado como foto de perfil de um usuário específico.")
-    @Parameter(name = "userId", description = "ID do usuário ao qual a foto pertence", required = true, example = "1")
-    @Parameter(name = "file", description = "Arquivo de imagem a ser enviado (JPG, PNG, WEBP - max 2MB)", required = true)
+               description = "Faz o upload de uma imagem para o perfil de um usuário específico. Requer que o usuário autenticado seja o dono do perfil ou um ADMIN.")
+    @Parameter(name = "userId", description = "ID do usuário ao qual a foto pertence.", required = true, example = "1")
     public ResponseEntity<?> uploadProfilePicture(
             @PathVariable Long userId,
             @RequestParam("file") MultipartFile file) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal() == null) {
+            logger.warn("Tentativa de upload sem autenticação válida para userId {}", userId);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Não autenticado");
+        }
+
+        String authenticatedUserIdString = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                            .map(GrantedAuthority::getAuthority)
+                            .anyMatch(role -> role.equals("ROLE_ADMIN"));
+
+        Long authenticatedUserId;
+        try {
+            authenticatedUserId = Long.parseLong(authenticatedUserIdString);
+        } catch (NumberFormatException e) {
+            logger.error("X-User-ID não é um Long válido: {}", authenticatedUserIdString);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Identificação de usuário inválida.");
+        }
+
+        // Permite se o ID no path for o mesmo do usuário logado OU se o usuário for ADMIN
+        if (!authenticatedUserId.equals(userId) && !isAdmin) {
+            logger.warn("Usuário ID {} (roles: {}) tentou fazer upload para userId {} sem permissão.",
+                        authenticatedUserId, authentication.getAuthorities(), userId);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para alterar a foto deste usuário.");
+        }
+        logger.info("Autorização OK para upload: userId {}, requisitanteId {}, isAdmin {}", userId, authenticatedUserId, isAdmin);
 
         if (file.isEmpty()) { return ResponseEntity.badRequest().body("Arquivo está vazio."); }
 
@@ -79,11 +110,10 @@ public class FileUploadController {
         }
     }
 
-    // Endpoint pra buscar info da foto
     @GetMapping("/profile-picture-info/{userId}")
     @Operation(summary = "Obter Informações da Foto de Perfil",
-               description = "Retorna a URL completa para acessar a foto de perfil de um usuário específico.")
-    @Parameter(name = "userId", description = "ID do usuário", required = true, example = "1")
+               description = "Retorna a URL completa para acessar a foto de perfil de um usuário específico. Requer autenticação.")
+    @Parameter(name = "userId", description = "ID do usuário cuja informação da foto de perfil é desejada.", required = true, example = "1")
     public ResponseEntity<?> getProfilePictureInfo(@PathVariable Long userId) {
         Optional<ProfilePicture> pictureOpt = profilePictureRepository.findByUserId(userId);
 
@@ -102,18 +132,49 @@ public class FileUploadController {
         }
     }
 
-    // Endpoint pra servir a img
     @GetMapping("/serve/{subfolder}/{filename:.+}")
-    @Operation(summary = "Servir Arquivo de Mídia",
-               description = "Retorna o conteúdo binário de um arquivo de mídia armazenado. Usado para exibir imagens.")
-    @Parameter(name = "subfolder", description = "A subpasta onde o arquivo está armazenado (ex: 'profile-pictures', 'pet-pictures')", required = true, example = "profile-pictures")
-    @Parameter(name = "filename", description = "O nome único do arquivo (com extensão) como foi salvo", required = true, example = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jpg")
+    @Operation(summary = "Servir Arquivo de Mídia (Imagem)",
+               description = "Retorna o conteúdo binário de um arquivo de mídia armazenado. Usado para exibir imagens. Geralmente público.")
+    @Parameter(name = "subfolder", description = "A subpasta onde o arquivo está (ex: 'profile-pictures', 'pet-pictures')", required = true, example = "profile-pictures")
+    @Parameter(name = "filename", description = "O nome único do arquivo (com extensão) como foi salvo", required = true, example = "xxxxxxxx.jpg")
     public ResponseEntity<Resource> serveFile(
             @PathVariable String subfolder,
             @PathVariable String filename,
             HttpServletRequest request) {
         logger.debug("Requisição para servir arquivo: subfolder={}, filename={}", subfolder, filename);
         return storageService.loadAndServe(subfolder, filename, request);
+    }
+
+    @PostMapping("/upload/pet-picture")
+    @Operation(summary = "Upload da Foto de um Pet (Requer ADMIN)",
+               description = "Faz o upload de uma imagem para um pet. Retorna o identificador do arquivo salvo. Apenas administradores podem usar este endpoint.")
+    public ResponseEntity<?> uploadPetPicture(
+            @RequestParam("file") MultipartFile file) {
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("Arquivo da foto do pet está vazio.");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !(contentType.equals("image/jpeg") || contentType.equals("image/png") || contentType.equals("image/webp"))) {
+            return ResponseEntity.badRequest().body("Tipo de arquivo inválido para foto do pet. Use JPG, PNG ou WEBP.");
+        }
+
+        try {
+            String storageIdentifier = storageService.store(file, "pet-pictures");
+
+            String relativeUrl = "/api/media/serve/pet-pictures/" + storageIdentifier;
+
+            Map<String, String> response = Map.of(
+                "fileName", storageIdentifier,
+                "relativeUrl", relativeUrl
+            );
+            logger.info("Foto de pet enviada com sucesso. Identificador: {}", storageIdentifier);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Falha na requisição de upload de foto de pet: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
 }
