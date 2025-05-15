@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() //fallback
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/api/users/cadastrar", "/api/users/login").permitAll()
-                .requestMatchers("/user-swagger-ui.html", "/user-api-docs/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/users/user-swagger-ui.html", "/api/users/user-api-docs/**", "/api/users/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
