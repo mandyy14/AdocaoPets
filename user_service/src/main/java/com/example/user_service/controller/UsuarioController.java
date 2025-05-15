@@ -25,10 +25,14 @@ import com.example.user_service.dto.UpdatePasswordRequest;
 import com.example.user_service.model.Usuario;
 import com.example.user_service.service.IUsuarioService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(name = "Usuários", description = "Endpoints para gerenciamento, cadastro e login de usuários")
 public class UsuarioController {
 
     private final IUsuarioService usuarioService;
@@ -40,6 +44,8 @@ public class UsuarioController {
     }
 
     @PostMapping("/cadastrar")
+    @Operation(summary = "Cadastrar Novo Usuário",
+               description = "Cria um novo usuário no sistema. O login será o mesmo que o email e o cargo é 'user' por padrão.")
     public ResponseEntity<Usuario> cadastrarUsuario(@Valid @RequestBody CadastroRequest dto) {
         Usuario usuarioSalvo = usuarioService.salvarUsuario(dto);
 
@@ -48,6 +54,8 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Autenticar Usuário",
+               description = "Autentica um usuário com email e senha. Em caso de sucesso, retorna os dados do usuário. (TODO: Futuramente retornará um token JWT)")
     public ResponseEntity<?> loginUsuario(@Valid @RequestBody LoginRequest loginRequest) {
         Usuario usuarioAutenticado = usuarioService.autenticarUsuario(loginRequest.getEmail(), loginRequest.getSenha());
         usuarioAutenticado.setSenha(null);
@@ -55,6 +63,8 @@ public class UsuarioController {
     }
 
     @GetMapping("/listar")
+    @Operation(summary = "Listar Todos os Usuários",
+               description = "Retorna uma lista de todos os usuários cadastrados. (Endpoint a ser protegido futuramente).")
     public List<Usuario> listarUsuarios() {
         List<Usuario> usuarios = usuarioService.listarTodos();
         usuarios.forEach(u -> u.setSenha(null));
@@ -62,6 +72,8 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}/buscar")
+    @Operation(summary = "Buscar Usuário por ID",
+               description = "Retorna os detalhes de um usuário específico baseado no seu ID.")
     public ResponseEntity<Usuario> buscarUsuario(@PathVariable Long id) {
         Usuario usuario = usuarioService.buscarPorId(id);
         usuario.setSenha(null);
@@ -69,12 +81,16 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}/deletar")
+    @Operation(summary = "Deletar Usuário por ID",
+               description = "Remove um usuário do sistema baseado no seu ID. Requer confirmação.")
      public ResponseEntity<Void> deletarUsuario(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean confirmacao) {
         usuarioService.deletarUsuario(id, confirmacao);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/email")
+    @Operation(summary = "Atualizar Email do Usuário",
+               description = "Permite que um usuário (autenticado) atualize seu endereço de email. Requer a senha atual para confirmação.")
     public ResponseEntity<Usuario> updateEmail(
             @PathVariable Long id,
             @Valid @RequestBody UpdateEmailRequest dto) {
@@ -85,6 +101,8 @@ public class UsuarioController {
     }
 
     @PatchMapping("/{id}/password")
+    @Operation(summary = "Atualizar Senha do Usuário",
+               description = "Permite que um usuário (autenticado) atualize sua senha. Requer a senha atual e a nova senha.")
     public ResponseEntity<Void> updatePassword(
             @PathVariable Long id,
             @Valid @RequestBody UpdatePasswordRequest dto) {
@@ -94,6 +112,8 @@ public class UsuarioController {
     }
 
     @GetMapping("/{id}/profile-picture-url")
+    @Operation(summary = "Buscar URL da Foto de Perfil do Usuário",
+               description = "Endpoint proxy que busca a URL da foto de perfil do usuário no media_service.")
      public ResponseEntity<?> getProfilePictureUrl(@PathVariable Long id) {
         logger.info("Recebida requisição para buscar URL da foto do usuário {}", id);
         Optional<String> imageUrlOpt = usuarioService.getProfileImageUrlFromMediaService(id);

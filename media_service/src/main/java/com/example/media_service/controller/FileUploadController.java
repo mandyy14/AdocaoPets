@@ -23,8 +23,13 @@ import com.example.media_service.service.IStorageService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/media")
+@Tag(name = "Mídia", description = "Endpoints para upload e recuperação de arquivos de mídia")
 public class FileUploadController {
 
     private final IStorageService storageService;
@@ -39,6 +44,10 @@ public class FileUploadController {
 
     // Endpoint upload de foto
     @PostMapping("/upload/profile-picture/{userId}")
+    @Operation(summary = "Upload da Foto de Perfil",
+               description = "Faz o upload de um arquivo de imagem para ser usado como foto de perfil de um usuário específico.")
+    @Parameter(name = "userId", description = "ID do usuário ao qual a foto pertence", required = true, example = "1")
+    @Parameter(name = "file", description = "Arquivo de imagem a ser enviado (JPG, PNG, WEBP - max 2MB)", required = true)
     public ResponseEntity<?> uploadProfilePicture(
             @PathVariable Long userId,
             @RequestParam("file") MultipartFile file) {
@@ -72,6 +81,9 @@ public class FileUploadController {
 
     // Endpoint pra buscar info da foto
     @GetMapping("/profile-picture-info/{userId}")
+    @Operation(summary = "Obter Informações da Foto de Perfil",
+               description = "Retorna a URL completa para acessar a foto de perfil de um usuário específico.")
+    @Parameter(name = "userId", description = "ID do usuário", required = true, example = "1")
     public ResponseEntity<?> getProfilePictureInfo(@PathVariable Long userId) {
         Optional<ProfilePicture> pictureOpt = profilePictureRepository.findByUserId(userId);
 
@@ -92,8 +104,12 @@ public class FileUploadController {
 
     // Endpoint pra servir a img
     @GetMapping("/serve/{subfolder}/{filename:.+}")
+    @Operation(summary = "Servir Arquivo de Mídia",
+               description = "Retorna o conteúdo binário de um arquivo de mídia armazenado. Usado para exibir imagens.")
+    @Parameter(name = "subfolder", description = "A subpasta onde o arquivo está armazenado (ex: 'profile-pictures', 'pet-pictures')", required = true, example = "profile-pictures")
+    @Parameter(name = "filename", description = "O nome único do arquivo (com extensão) como foi salvo", required = true, example = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jpg")
     public ResponseEntity<Resource> serveFile(
-            @PathVariable String subfolder, // profile-pictures ou pet-pictures
+            @PathVariable String subfolder,
             @PathVariable String filename,
             HttpServletRequest request) {
         logger.debug("Requisição para servir arquivo: subfolder={}, filename={}", subfolder, filename);
