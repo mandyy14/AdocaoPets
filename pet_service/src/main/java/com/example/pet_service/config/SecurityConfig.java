@@ -15,11 +15,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired // Injete o filtro
+    @Autowired
     private UserContextHeaderFilter userContextHeaderFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.addFilterBefore(userContextHeaderFilter, UsernamePasswordAuthenticationFilter.class);
+
         http
             .cors(cors -> cors.disable()) // genrenciado pelo api_gateway            
             .csrf(csrf -> csrf.disable())
@@ -32,8 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/pets/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(userContextHeaderFilter, UsernamePasswordAuthenticationFilter.class);
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }

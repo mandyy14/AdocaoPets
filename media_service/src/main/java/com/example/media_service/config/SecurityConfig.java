@@ -21,6 +21,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.addFilterBefore(userContextHeaderFilter, UsernamePasswordAuthenticationFilter.class);
         http
             .cors(cors -> cors.disable()) // genrenciado pelo api_gateway
             .csrf(csrf -> csrf.disable())
@@ -33,8 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/media/upload/pet-picture/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(userContextHeaderFilter, UsernamePasswordAuthenticationFilter.class);
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }
