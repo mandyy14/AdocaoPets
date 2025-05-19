@@ -2,9 +2,11 @@ package com.example.user_service.controller;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
+import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.example.user_service.dto.CadastroRequest;
 import com.example.user_service.dto.LoginRequest;
@@ -30,7 +30,6 @@ import com.example.user_service.service.JwtService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import jakarta.validation.Valid;
 
 @RestController
@@ -72,11 +71,15 @@ public class UsuarioController {
         Map<String, Object> responseBody = new HashMap<>();
         responseBody.put("token", token);
 
-        Map<String, Object> userMap = new HashMap<>();
+       Map<String, Object> userMap = new HashMap<>();
         userMap.put("id", usuarioAutenticado.getId());
         userMap.put("nome", usuarioAutenticado.getNome());
         userMap.put("email", usuarioAutenticado.getEmail());
         userMap.put("cargo", usuarioAutenticado.getCargo());
+        userMap.put("cpf", usuarioAutenticado.getCpf());
+        userMap.put("celular", usuarioAutenticado.getCelular());
+        userMap.put("endereco", usuarioAutenticado.getEndereco());
+        userMap.put("login", usuarioAutenticado.getLogin());
 
         responseBody.put("user", userMap);
 
